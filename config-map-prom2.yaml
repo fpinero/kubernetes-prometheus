@@ -135,6 +135,15 @@ data:
         - source_labels: [__meta_kubernetes_service_name]
           action: replace
           target_label: kubernetes_name
-    # Settings related to the remote write feature.
-    #remote_write:
-      #- url: <URL_del_servidor_prometheus_destino>/write
+      - job_name: 'federate'
+        scrape_interval: 15s
+        honor_labels: true
+        metrics_path: '/federate'
+        params:
+        'match[]':
+          - '{job="prometheus"}'
+          - '{__name__=~"job:.*"}'
+          - '{__name__=~".+"}'
+        static_configs:
+        - targets:
+          - '3.64.208.139:9090' # prom1
