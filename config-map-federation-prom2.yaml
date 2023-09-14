@@ -21,14 +21,17 @@ data:
     global:
       scrape_interval: 5s
       evaluation_interval: 5s
+
     rule_files:
       - /etc/prometheus/prometheus.rules
+
     alerting:
       alertmanagers:
       - scheme: http
         static_configs:
         - targets:
           - "alertmanager.monitoring.svc:9093"
+
     scrape_configs:
       - job_name: 'node-exporter'
         kubernetes_sd_configs:
@@ -37,6 +40,7 @@ data:
         - source_labels: [__meta_kubernetes_endpoints_name]
           regex: 'node-exporter'
           action: keep
+
       - job_name: 'kubernetes-apiservers'
         kubernetes_sd_configs:
         - role: endpoints
@@ -48,6 +52,7 @@ data:
         - source_labels: [__meta_kubernetes_namespace, __meta_kubernetes_service_name, __meta_kubernetes_endpoint_port_name]
           action: keep
           regex: default;kubernetes;https
+
       - job_name: 'kubernetes-nodes'
         scheme: https
         tls_config:
@@ -64,6 +69,7 @@ data:
           regex: (.+)
           target_label: __metrics_path__
           replacement: /api/v1/nodes/${1}/proxy/metrics
+
       - job_name: 'kubernetes-pods'
         kubernetes_sd_configs:
         - role: pod
@@ -88,9 +94,11 @@ data:
         - source_labels: [__meta_kubernetes_pod_name]
           action: replace
           target_label: kubernetes_pod_name
+
       - job_name: 'kube-state-metrics'
         static_configs:
           - targets: ['kube-state-metrics.kube-system.svc.cluster.local:8080']
+
       - job_name: 'kubernetes-cadvisor'
         scheme: https
         tls_config:
@@ -107,6 +115,7 @@ data:
           regex: (.+)
           target_label: __metrics_path__
           replacement: /api/v1/nodes/${1}/proxy/metrics/cadvisor
+
       - job_name: 'kubernetes-service-endpoints'
         kubernetes_sd_configs:
         - role: endpoints
@@ -127,23 +136,17 @@ data:
           target_label: __address__
           regex: ([^:]+)(?::\d+)?;(\d+)
           replacement: $1:$2
-        - action: labelmap
-          regex: __meta_kubernetes_service_label_(.+)
-        - source_labels: [__meta_kubernetes_namespace]
-          action: replace
-          target_label: kubernetes_namespace
-        - source_labels: [__meta_kubernetes_service_name]
-          action: replace
-          target_label: kubernetes_name
+
       - job_name: 'federate'
         scrape_interval: 15s
         honor_labels: true
+        scheme: http
         metrics_path: '/federate'
         params:
-        'match[]':
-          - '{job="prometheus"}'
-          - '{__name__=~"job:.*"}'
-          - '{__name__=~".+"}'
+          'match[]':
+            - '{job="prometheus"}'
+            - '{__name__=~"job:.*"}'
+            - '{__name__=~".+"}'
         static_configs:
-        - targets:
-          - '3.64.208.139:9090' # prom1
+          - targets:
+            - 'aca51434b01a04932b9fb33e8450a22d-532040352.eu-central-1.elb.amazonaws.com:9090'
